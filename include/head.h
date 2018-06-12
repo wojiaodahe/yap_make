@@ -4,7 +4,7 @@
 #include "pcb.h"
 
 extern void OS_Sched(void);
-extern void printk(char *fmt,...);
+extern void printk(const char *fmt,...);
 extern int test_led(void);
 extern void init_led(void);
 extern void init_uart0(void);

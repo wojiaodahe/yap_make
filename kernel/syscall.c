@@ -3,7 +3,7 @@
 #include "head.h"
 #include "kernel.h"
 #include "error.h"
-#include <stdarg.h>
+#include "print.h"
 
 extern pcb_t *current;
 
@@ -172,7 +172,7 @@ int myprintf(char *fmt, ...)
 	const int argc = 3;
 	unsigned int argv[argc];
 	int ret;
-#if 0
+#if 1
 
 	va_list ap;
 	char string[256];
@@ -180,10 +180,10 @@ int myprintf(char *fmt, ...)
 	memset(string, 0, 256);
 	
 	va_start(ap, fmt);
-	vsprintf(string, fmt, ap);
+	ret = vsnprintf(string, 256, fmt, ap);
 	argv[0] = SYSTEM_CALL_PRINTF;
 	argv[1] = (unsigned int )string;
-	argv[2] = strlen(string);
+	argv[2] = ret;
 	ret = user_syscall(argc, argv);	
 	va_end(ap);
 #endif
