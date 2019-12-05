@@ -55,6 +55,7 @@ struct inode
     unsigned int            i_rdev;
 	unsigned short          i_count;
 	unsigned short          i_flags;
+	unsigned int 			i_socket;
     void                    *i_what;
 };
 
@@ -71,6 +72,7 @@ struct file
     struct file             *f_prev;
     struct inode            *f_inode;
     struct file_operations *f_op;
+    void *private_data;
 };
 
 
@@ -89,12 +91,12 @@ struct file_operations
 struct inode_operations 
 {
 	struct file_operations *default_file_ops;
-	int (*create)     (struct inode *,const char *,int,int,struct inode **);
-	int (*lookup)     (struct inode *,const char *,int,struct inode **);
-	int (*mkdir)      (struct inode *,const char *,int,int);
-	int (*rmdir)      (struct inode *,const char *,int);
-	int (*mknod)      (struct inode *,const char *,int,int,int);
-	int (*rename)     (struct inode *,const char *,int,struct inode *,const char *,int);
+	int (*create)     (struct inode *, char *,int,int,struct inode **);
+	int (*lookup)     (struct inode *, char *,int,struct inode **);
+	int (*mkdir)      (struct inode *, char *,int,int);
+	int (*rmdir)      (struct inode *, char *,int);
+	int (*mknod)      (struct inode *, char *,int,int,int);
+	int (*rename)     (struct inode *, char *,int,struct inode *,const char *,int);
 };
 
 #define MAJOR(a) (((unsigned int)(a)) >> 8)
@@ -120,17 +122,14 @@ struct inode_operations
 #define S_ISFIFO(m)	(((m) & S_IFMT) == S_IFIFO)
 #define S_ISSOCK(m)	(((m) & S_IFMT) == S_IFSOCK)
 
-#define NR_OPEN    16
+#define NR_OPEN    	16
+#define NR_FILEP	32
 
-extern struct file_operations *get_blkfops(unsigned int major);
-extern struct file_operations * get_chrfops(unsigned int major);
-extern int register_chrdev(unsigned int major, const char * name, struct file_operations *fops);
-extern int register_blkdev(unsigned int major, const char * name, struct file_operations *fops);
-extern int register_super_block(unsigned int dev, struct super_block *sb);
-extern int dir_namei(char *pathname, int *namelen, char **name, struct inode *base, struct inode **res_inode);
-extern int lookup(struct inode *dir, char *name, int len, struct inode **result);
-extern struct super_block *ramfs_read_super(struct super_block *sb);
-int ramdisk_init(void);
+extern int sys_mknod(char * filename, int mode, unsigned int dev);
+extern int sys_read(unsigned int fd, char *buf, unsigned int count);
+extern int sys_write(unsigned int fd, char *buf, unsigned int count);
+extern int sys_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
+
 #endif
 
 

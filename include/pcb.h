@@ -3,9 +3,10 @@
 #include "message.h"
 #include "fs.h"
 #include "config.h"
+#include "wait.h"
 
-#define disable_schedule(x)	disable_irq()
-#define enable_schedule(x)	enable_irq()
+#define disable_schedule(x)	enter_critical()
+#define enable_schedule(x)	exit_critical()
 
 extern void *kmalloc(unsigned int size);
 
@@ -40,14 +41,18 @@ typedef struct pcb
 	unsigned int prio;
 	unsigned int counter;
 
-	unsigned int process_mem_size;
-	unsigned int phyaddr;
-	unsigned int viraddr;
+    unsigned int preempt_count;
+
+	unsigned long process_mem_size;
+	unsigned long phyaddr;
+	unsigned long viraddr;
 
 	unsigned int authority;//进程权限（内核进程、用户进程）
 
 	int time_slice;
 	int ticks;
+
+	wait_queue_t wq;
 
 	MESSAGE *p_msg;
 	int p_recvfrom;
@@ -66,7 +71,18 @@ typedef struct pcb
 	struct file 	*filp[NR_OPEN];
 	struct inode	*pwd;
 	struct inode 	*root;
+
+    struct pcb      *next_sleep_proc;
+    struct pcb      *prev_sleep_proc;
 }pcb_t;
+
+struct proc_list_head
+{
+    pcb_t head;
+    pcb_t *current;
+    unsigned int prio;
+    unsigned int proc_cnt;
+};
 
 #endif 
 

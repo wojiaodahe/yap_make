@@ -1,4 +1,4 @@
-target remote 192.168.1.7:2331
+target remote 192.168.1.100:2331
 monitor reset
 monitor halt
 monitor speed 8000
@@ -6,7 +6,7 @@ monitor endian little
 monitor reg cpsr = 0xd3
 
 
-monitor memU32 0x4A000008 = 0xFFFFFFFF		    #Disable All Interrupts
+monitor memU32 0x4A000008 = 0xFFFFFFFF		#Disable All Interrupts
 #WDT
 monitor memU32 0x53000000 = 0x00000000      #WTCON
 #PLL

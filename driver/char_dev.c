@@ -3,6 +3,7 @@
 #include "error.h"
 #include "device.h"
 #include "common.h"
+#include "syslib.h"
 
 static struct chr_dev_struct chr_devs[NR_CHRDEV];
 
@@ -12,7 +13,7 @@ struct chr_dev_struct *alloc_chr_dev_struct()
 
     for (chr = 0; chr < NR_CHRDEV; chr++) 
     {
-        if (!chr_devs[chr].device)
+        if (!chr_devs[chr].fops)
             return &chr_devs[chr];
     }
     return NULL;
@@ -23,7 +24,7 @@ struct chr_dev_struct *find_chr_dev(dev_t major)
     int dev;
     for (dev = 0; dev < NR_CHRDEV; dev++)
     {
-        if (chr_devs[dev].device && (chr_devs[dev].device->dev == major))
+        if (chr_devs[dev].dev == major)
             return &chr_devs[dev];
     }
 
@@ -38,38 +39,71 @@ struct file_operations * get_chrfops(unsigned int major)
 		return NULL;
 
     chr_dev = find_chr_dev(major);
-    if (!chr_dev || !chr_dev->device)
+    if (!chr_dev)
         return NULL;
 
-    return chr_dev->device->fops;
+    return chr_dev->fops;
 }
 
-int register_chrdev(unsigned int major, const char * name, struct file_operations *fops)
+void *get_cdev_private_data(int major)
 {
     struct chr_dev_struct *chr_dev;
-    struct device *dev;
 
+    if (major >= NR_CHRDEV)
+		return NULL;
+
+    chr_dev = find_chr_dev(major);
+    if (!chr_dev)
+    	return NULL;
+
+    return chr_dev->private_data;
+}
+
+int set_cdev_private_data(int major, void *data)
+{
+	struct chr_dev_struct *chr_dev;
 
 	if (major >= NR_CHRDEV)
 		return -EINVAL;
 
-    dev = alloc_device_struct();
-    if (!dev)
-        return -ENOMEM;
+	chr_dev = find_chr_dev(major);
+	if (!chr_dev)
+		return -ENODEV;
+
+	chr_dev->private_data = data;
+
+	return 0;
+}
+
+int register_chrdev(unsigned int major, char * name, struct file_operations *fops)
+{
+    struct chr_dev_struct *chr_dev;
+
+	if (major >= NR_CHRDEV)
+		return -EINVAL;
+
 
     chr_dev = alloc_chr_dev_struct();
     if (!chr_dev)
-    {
-        put_device_struct(dev);
         return -ENOMEM;
-    }
     
-    chr_dev->device = dev;
-    dev->name = name;
-    dev->dev  = major;
-    dev->fops = fops;
+    chr_dev->name = name;
+    chr_dev->dev  = major;
+    chr_dev->fops = fops;
 
 	return 0;
+}
+
+void unregister_chrdev(unsigned int major)
+{
+    int chr;
+
+    for (chr = 0; chr < NR_CHRDEV; chr++) 
+    {
+        if (chr_devs[chr].dev == major)
+          	memset(&chr_devs[chr], 0, sizeof(chr_devs[0]));
+    }
+
 }
 
 int chrdev_open(struct inode *inode, struct file *filp)
@@ -81,7 +115,7 @@ int chrdev_open(struct inode *inode, struct file *filp)
     if (!chr_dev)
 		return -ENODEV;
 
-	filp->f_op = chr_dev->device->fops;
+	filp->f_op = chr_dev->fops;
 	if (filp->f_op->open)
 		return filp->f_op->open(inode,filp);
 	return 0;

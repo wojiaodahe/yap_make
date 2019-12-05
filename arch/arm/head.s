@@ -1,5 +1,5 @@
 @******************************************************************************       
-@ 异常向量，本程序中，除Reset和HandleIRQ外，其它异常都没有使用
+@ 锟届常锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟叫ｏ拷锟斤拷Reset锟斤拷HandleIRQ锟解，锟斤拷锟斤拷锟届常锟斤拷没锟斤拷使锟斤拷
 @******************************************************************************   
 .global kernel_main
 .global init_system
@@ -22,6 +22,7 @@
 .global  SYS_MODE_STACK
 
 
+
 .equ DISABLE_IRQ, 	0x80
 .equ DISABLE_FIQ,  	0x40
 .equ SYS_MOD,		0x1f
@@ -38,23 +39,23 @@
 _start:
 	b   Reset
 HandleUndef:
-    b   HandleUndef 		@0x04: 未定义指令中止模式的向量地址
+    b   HandleUndef 		@0x04: 未锟斤拷锟斤拷指锟斤拷锟斤拷止模式锟斤拷锟斤拷锟斤拷锟斤拷址
 Handle_swi:
-    b   HandleSWI			@0x08: 管理模式的向量地址，通过SWI指令进入此模式
+    b   HandleSWI			@0x08: 锟斤拷锟斤拷模式锟斤拷锟斤拷锟斤拷锟斤拷址锟斤拷通锟斤拷SWI指锟斤拷锟斤拷锟斤拷模式
 HandlePrefetchAbort:
-    b   HandlePrefetchAbort			@ 0x0c: 指令预取终止导致的异常的向量地址
+    b   HandlePrefetchAbort			@ 0x0c: 指锟斤拷预取锟斤拷止锟斤拷锟铰碉拷锟届常锟斤拷锟斤拷锟斤拷锟斤拷址
 HandleDataAbort:
-    b  	HandleDataAbort			@ 0x10: 数据访问终止导致的异常的向量地址
+    b  	HandleDataAbort			@ 0x10: 锟斤拷锟捷凤拷锟斤拷锟斤拷止锟斤拷锟铰碉拷锟届常锟斤拷锟斤拷锟斤拷锟斤拷址
 HandleNotUsed:
-    b   HandleNotUsed		@ 0x14: 保留
+    b   HandleNotUsed		@ 0x14: 锟斤拷锟斤拷
 Handle_irq:
-    b   HandleIRQ			@ 0x18: 中断模式的向量地址
+    b   HandleIRQ			@ 0x18: 锟叫讹拷模式锟斤拷锟斤拷锟斤拷锟斤拷址
 HandleFIQ:
-    b   HandleFIQ			@ 0x1c: 快中断模式的向量地址
+    b   HandleFIQ			@ 0x1c: 锟斤拷锟叫讹拷模式锟斤拷锟斤拷锟斤拷锟斤拷址
 
 Reset:
 
-    msr cpsr_cxsf, #0xd2    @ 进入中断模式
+    msr cpsr_cxsf, #0xd2    @ 锟斤拷锟斤拷锟叫讹拷模式
 	ldr		r0, =IRQ_MODE_STACK
 	ldr		r0, [r0]
 	mov		sp, r0
@@ -74,7 +75,17 @@ Reset:
 	ldr		r0, [r0]
 	mov		sp, r0
 
-@	bl copy_proc_beg
+	mrc    p15, 0, r0, c1, c0, 0    
+	bic    r0, r0, #0x0001          @禁用MMU
+	mcr    p15, 0, r0, c1, c0, 0    @tq2440 运行ok的代码直接拿到jz2440上运行异常
+                                    @现象: 通过jlink第一次仿真运行是可以的,然而结束仿真后在不断电的情况下再次
+                                    @仿真就会死掉(死在禁用看门狗的那条语句)
+                                    @可能原因:jz440 和 tq2440可能(具体是不是我没有研究)是jtag引脚接的不同(reset脚?) 
+                                    @断电重启后p15处理器被复位,mmu是禁用状态,然而jz2440在不断电重新载入程序后
+                                    @并不会复位p15处理器,导致mmu还是开启状态,然而这时候的清bss段或其他的内存操
+                                    @作有可能会清掉mmu映射表,从而导致访问内存出现异常
+                                    @!!!!!!这个地方要详细检查,因为mmu映射表不应该出现在bss段,或者异常并不是因为映射表被清掉导致!!!!!!!
+	@bl copy_proc_beg
 
 	bl init_system
 
@@ -89,8 +100,8 @@ _clear_bss:
 	b	1b
 
 _main:
-    ldr lr, =halt_loop      @ 设置返回地址
-    ldr pc, =kernel_main           @ 调用main函数
+    ldr lr, =halt_loop      @ 锟斤拷锟矫凤拷锟截碉拷址
+    ldr pc, =kernel_main           @ 锟斤拷锟斤拷main锟斤拷锟斤拷
 
 /*
 copy_proc_beg:
@@ -144,7 +155,7 @@ HandleIRQ:
 	MRS     R3, SPSR				@ Copy SPSR (Task CPSR)
 	
 
-	@CHANGE_TO_SYS       @切换到 SYS 模式当前进程是在此模式下运行
+	@CHANGE_TO_SYS       @锟叫伙拷锟斤拷 SYS 模式锟斤拷前锟斤拷锟斤拷锟斤拷锟节达拷模式锟斤拷锟斤拷锟斤拷
     msr     CPSR_cxsf, #(DISABLE_FIQ | DISABLE_IRQ | SYS_MOD)
 
 	STMFD   SP!, {R2}				@ Push task''s PC 
@@ -179,7 +190,7 @@ HandleIRQ:
 	LDMFD 	SP!, {PC}^
 
 
-__int_schedule:               @在此模式下把当前进程的r0 - r12 及cpsr入栈保存
+__int_schedule:               @锟节达拷模式锟铰把碉拷前锟斤拷锟教碉拷r0 - r12 锟斤拷cpsr锟斤拷栈锟斤拷锟斤拷
 	LDR		R0, =current
 	LDR		R0, [R0]
 	LDR		SP, [R0]
@@ -267,7 +278,7 @@ HandleSWI:
 	MRS     R3, SPSR				@ Copy SPSR (Task CPSR)
 	
 
-	@CHANGE_TO_SYS       @切换到 SYS 模式当前进程是在此模式下运行
+	@CHANGE_TO_SYS       @锟叫伙拷锟斤拷 SYS 模式锟斤拷前锟斤拷锟斤拷锟斤拷锟节达拷模式锟斤拷锟斤拷锟斤拷
     msr     CPSR_cxsf, #(DISABLE_FIQ | DISABLE_IRQ | SYS_MOD)
 
 	STMFD   SP!, {R2}				@ Push task''s PC 

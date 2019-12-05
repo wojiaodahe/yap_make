@@ -1,7 +1,7 @@
 #include "pcb.h"
 #include "config.h"
-extern void printk(const char *fmt, ...);
-extern void * memcpy(void * dest,const void *src,unsigned int count);
+#include "list.h"
+#include "printk.h"
 
 typedef struct 
 {
@@ -16,7 +16,10 @@ pcb_t *alloc_pcb(void)
 	static unsigned int cur_pcb = 0;
 	
 	if (cur_pcb < MAX_TASK_NUM)
+	{
+		INIT_LIST_HEAD(&task_pcb[cur_pcb].wq.task_list);
 		return &task_pcb[cur_pcb++];
+	}
 
 	return 0;
 }
@@ -48,8 +51,8 @@ pcb_t *pcb_list_init(void)
 
     if ((tmp = (pcb_t *)alloc_pcb()) == (void *)0)
     {
-        printk("kmalloc error\r\n");
-        return (void *)0;
+        printk("%s failed\n", __func__);
+        panic();
     }
 
 	tmp->next = tmp;

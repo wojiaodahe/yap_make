@@ -32,10 +32,9 @@ static struct uart_driver 	s3c24xx_uart_drv;
 static void s3c24xx_uart_putchar(struct uart_port *port, int c)
 {
 	char tmp = c;
-    /* 等待，直到发送缓冲区中的数据已经全部发送出去 */
+   
     while (!(UTRSTAT0 & TXD0READY));
 
-    /* 向UTXH0寄存器中写入数据，UART即自动将它发送出去 */
     UTXH0 = tmp;
 }
 
@@ -61,6 +60,7 @@ static int s3c24xx_uart_tty_write(struct tty *tty, const char *s, unsigned int c
 	return 0;
 }
 
+#if 0
 static unsigned char s3c24xx_uart_getchar(struct uart_port *port)
 {
     /* 等待，直到接收缓冲区中的有数据 */
@@ -87,8 +87,9 @@ static int s3c24xx_uart_tty_read(struct tty *tty, char *s, unsigned int count)
 
 	return 0;
 }
+#endif
 
-void uart_isr()
+void uart_isr(void *arg)
 {
    if (SUBSRCPND & (1 << 0)) 
    {
@@ -106,7 +107,7 @@ void uart_isr()
  * 初始化UART
  * 115200,8N1,无流控
  */
-void init_s3c24xx_uart()
+int init_s3c24xx_uart()
 {
     GPHCON  |= 0xa0;    // GPH2,GPH3用作TXD0,RXD0
     GPHUP   = 0x0c;     // GPH2,GPH3内部上拉
@@ -117,12 +118,14 @@ void init_s3c24xx_uart()
     UMCON0  = 0x00;     // 不使用流控
     UBRDIV0 = UART_BRD; // 波特率为115200
 
-    put_irq_handler(OS_IRQ_UART_0, uart_isr);
+    return request_irq(28, uart_isr, 0, &s3c24xx_uart_drv);
 
 }
 
 int s3c24xx_init_tty()
 {
+	int ret;
+	
 	s3c24xx_uart_drv.dev_name 	= "s3c24xx_uart";
 	s3c24xx_uart_drv.nr 	  	= CONFIG_UART_S3C24XX_COUNT,
 	s3c24xx_uart_drv.tty		= &s3c24xx_uart_tty;
@@ -133,7 +136,9 @@ int s3c24xx_init_tty()
 	s3c24xx_uart_tty.index		= 0;
 	s3c24xx_uart_tty.data		= &s3c24xx_uart_port;
 
-	init_s3c24xx_uart();
+	ret = init_s3c24xx_uart();
+	if (ret < 0)
+		return ret;
 
 	return register_tty(&s3c24xx_uart_tty);
 }

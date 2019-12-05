@@ -4,16 +4,17 @@
 #include "blk.h"
 #include "kmalloc.h"
 #include "common.h"
+#include "syslib.h"
 
 
 int  ramfs_open   (struct inode *, struct file *);
 void ramfs_close (struct inode *, struct file *);
 int ramfs_read(struct inode *inode, struct file *filp, char *buf, int len);
 int ramfs_write(struct inode *inode, struct file *filp, char *buf, int len);
-int ramfs_lookup(struct inode *dir, const char *name, int namelen, struct inode **res_inode);
-int ramfs_create(struct inode *dir, const char *name, int namelen, int mode, struct inode **res_inode);
-int ramfs_mknod(struct inode *dir, const char *name, int namelen, int mode, int dev_num);
-int ramfs_mkdir(struct inode *dir, const char *name, int namelen, int mode);
+int ramfs_lookup(struct inode *dir, char *name, int namelen, struct inode **res_inode);
+int ramfs_create(struct inode *dir, char *name, int namelen, int mode, struct inode **res_inode);
+int ramfs_mknod(struct inode *dir, char *name, int namelen, int mode, int dev_num);
+int ramfs_mkdir(struct inode *dir, char *name, int namelen, int mode);
 
 struct file_operations ramfs_file_operations = 
 {
@@ -51,6 +52,7 @@ int ramfs_open(struct inode *inode, struct file *filp)
 
 void ramfs_close(struct inode *inode, struct file *filp)
 {
+
 }
 
 int ramfs_read(struct inode *inode, struct file *filp, char *buf, int len)
@@ -81,7 +83,7 @@ int ramfs_write(struct inode *inode, struct file *filp, char *buf, int len)
     return ret;
 }
 
-struct ramfs_inode *ramfs_travel_child(struct ramfs_inode *parent, const char *name, int namelen)
+struct ramfs_inode *ramfs_travel_child(struct ramfs_inode *parent,   char *name, int namelen)
 {
     struct ramfs_inode *child;
     if (!parent)
@@ -105,7 +107,7 @@ struct ramfs_inode *ramfs_travel_child(struct ramfs_inode *parent, const char *n
     return NULL;
 }
 
-int ramfs_lookup(struct inode *dir, const char *name, int namelen, struct inode **res_inode)
+int ramfs_lookup(struct inode *dir,   char *name, int namelen, struct inode **res_inode)
 {
     struct ramfs_inode *parent;
     struct ramfs_inode *child;
@@ -143,7 +145,7 @@ int ramfs_add_node(struct ramfs_inode *parent, struct ramfs_inode *child)
    return 0;
 }
 
-int ramfs_create(struct inode *dir, const char *name, int namelen, int mode, struct inode **res_inode)
+int ramfs_create(struct inode *dir, char *name, int namelen, int mode, struct inode **res_inode)
 {
     struct ramfs_inode *parent;
     struct ramfs_inode *child;
@@ -184,7 +186,7 @@ int ramfs_create(struct inode *dir, const char *name, int namelen, int mode, str
 extern struct inode_operations chrdev_inode_operations;
 extern struct inode_operations blkdev_inode_operations;
 
-int ramfs_mkdir(struct inode *dir, const char *name, int namelen, int mode)
+int ramfs_mkdir(struct inode *dir,   char *name, int namelen, int mode)
 {
     struct ramfs_inode *parent;
     struct ramfs_inode *child;
@@ -226,7 +228,7 @@ int ramfs_mkdir(struct inode *dir, const char *name, int namelen, int mode)
     return ramfs_add_node(parent, child);
 }
 
-int ramfs_mknod(struct inode *dir, const char *name, int namelen, int mode, int dev_num)
+int ramfs_mknod(struct inode *dir,   char *name, int namelen, int mode, int dev_num)
 {
     struct ramfs_inode *parent;
     struct ramfs_inode *child;

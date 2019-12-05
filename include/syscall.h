@@ -10,13 +10,21 @@
 #define	 SYSTEM_CALL_IOCTL	7
 #define	 SYSTEM_CALL_LSEEK	8
 #define  SYSTEM_CALL_PRINTF	20
-#define  SYSTEM_CALL_SLEEP	21
+#define  SYSTEM_CALL_SSLEEP	21
+#define  SYSTEM_CALL_MSLEEP	22
 
 struct system_call_tag
 {
 	unsigned int id;
 	int (*fun)(int , int *);
 };
+
+extern void ssleep(unsigned int time);
+extern void msleep(unsigned int time);
+extern int myprintf(char *fmt, ...);
+extern unsigned int OS_Get_Ticks(void);
+extern int syscall(int argc, unsigned long *argv);
+
 
 #endif 
 

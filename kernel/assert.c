@@ -1,4 +1,6 @@
-#include "head.h"
+#include "interrupt.h"
+#include "printk.h"
+
 void assertion_failure(char *exp, char *file, char *base_file, int line)
 {
 
@@ -15,4 +17,29 @@ void assertion_failure(char *exp, char *file, char *base_file, int line)
 	 */
 	//spin("assertion_failure()");
 
+}
+
+void check_addr(void *addr)
+{
+    if (!addr)
+    {
+        kernel_disable_irq();
+        while (1)
+            printk("Addr NULL! %s %d\n", __func__, __LINE__);
+    }
+    
+    if (!((unsigned int)addr & 0x30000000))
+    {
+        kernel_disable_irq();
+        while (1)
+            printk("Addr: %p Error! %s %d\n", addr, __func__, __LINE__);
+    }
+
+    if ((unsigned int)addr & 0xc0000000)
+    {
+        kernel_disable_irq();
+        while (1)
+            printk("Addr %p Error! %s %d\n", addr, __func__, __LINE__);
+    }
+    
 }

@@ -12,7 +12,7 @@
 #define VIRTUAL_VECTOR_ADDR				0x0
 #define PHYSICAL_VECTOR_ADDR			0x30000000
 
-#define TLB_BASE                		0x33a00000                //TLB基址(1级页表基址)
+#define TLB_BASE                		0x33a00000              
 
 #define USER_PROGRAM_SPACE_START		0x32000000
 #define USER_PROGRAM_SPACE_SIZE			(TLB_BASE - USER_PROGRAM_SPACE_START)
@@ -23,7 +23,9 @@
 #define MAX_TASK_NUM					MAX_USER_PROGRAM_NUM
 #define TASK_STACK_SIZE					4096
 
-#define HZ								100
+
+#define MAX_UDP_LINK_NUM				64
+#define MAX_TCP_LINK_NUM				64
 
 #endif 
 

@@ -1,3 +1,4 @@
+#include "lib.h"
 
 void memset(void *src, unsigned char num, unsigned int len)
 {
@@ -17,7 +18,7 @@ void *memcpy(void *dest, void *src, unsigned int len)
 {
     char *d = dest;
     char *s = src;
-    
+
     if (!dest || !src || !len)
         return dest;
 

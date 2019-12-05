@@ -3,9 +3,20 @@
 #include "kmalloc.h"
 #include "common.h"
 #include "pcb.h"
-#include "head.h"
+#include "blk.h"
+#include "ramfs.h"
+#include "ofs.h"
+#include "proc.h"
+#include "lib.h"
+#include "printk.h"
 
+extern int nand_init(void);
+extern int ramdisk_init(void);
+extern int lookup(struct inode *dir, char *name, int len, struct inode **result);
+extern int dir_namei(char *pathname, int *namelen, char **name, struct inode *base, struct inode **res_inode);
 extern pcb_t *current;
+
+static struct file FILP[NR_FILEP];
 int ROOT_DEV = 0;
 
 int open_namei(char *pathname, int flag, int mode, struct inode **res_inode, struct inode *base)
@@ -68,8 +79,8 @@ int open_namei(char *pathname, int flag, int mode, struct inode **res_inode, str
     *res_inode = inode;
     return ret;
 }
-extern struct super_block *ofs_read_super(struct super_block *sb);
-struct file_system_type file_systems[] = 
+
+static struct file_system_type file_systems[] =
 {
 	{ramfs_read_super,	"ramfsfs", 1},
     {ofs_read_super,    "ofs",     3},
@@ -80,8 +91,6 @@ struct file_system_type file_systems[] =
 struct file_system_type *get_fs_type(char *name)
 {
     int i;
-    if (!name)
-        return &file_systems[0];
 
     for (i = 0; file_systems[i].read_super; i++)
     {
@@ -97,7 +106,7 @@ int fs_may_mount(unsigned int dev)
 }
 
 extern struct super_block *find_super(unsigned int dev);
-extern struct super_block *alloc_super();
+extern struct super_block *alloc_super(void);
 struct super_block *read_super(unsigned int dev, char *name, int flags, void *data)
 {
     struct super_block *sb;
@@ -376,15 +385,20 @@ int sys_unmount(char *dir_name)
 //WARNING! MAYBE BUGS!
 struct file *get_empty_filp()
 {
-//!!!!!!!!
-//!!!!!!!!
-    static unsigned int i = 0;
-	static struct  file filp[32];
+	int i = 0;
 
-    if (i > 32)
-        return NULL;
+	for (i = 0; i < NR_FILEP; i++)
+	{
+		if (!FILP[i].f_op)
+			return &FILP[i];
+	}
 
-    return &filp[i++];
+    return NULL;
+}
+
+struct inode *get_empty_inode()
+{
+	return kmalloc(sizeof (struct inode));
 }
 
 int sys_open(char *name, unsigned int flag, int mode)
@@ -519,7 +533,7 @@ int sys_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
 
 static int do_mkdir(char * pathname, int mode)
 {
-	const char * basename;
+	char * basename;
 	int namelen, error;
 	struct inode *dir;
 
@@ -540,7 +554,7 @@ static int do_mkdir(char * pathname, int mode)
     if (!dir->i_op || !dir->i_op->mkdir) 
    		return -EPERM;
 	
-	error = dir->i_op->mkdir(dir,basename,namelen,mode);
+	error = dir->i_op->mkdir(dir, basename, namelen, mode);
 	
     return error;
 }
@@ -583,9 +597,23 @@ int sys_mknod(char * filename, int mode, unsigned int dev)
 
 int vfs_init(void)
 {
-    ramdisk_init();
-	nand_init();
-    mount_root();
+	int ret;
+
+	ret = ramdisk_init();
+	if (ret < 0)
+	{
+		printk("RAMDISK INIT FAILED!!\n");
+		panic();
+	}
+
+	ret = nand_init();
+	if (ret < 0)
+	{
+		printk("NAND INIT FAILED!!\n");
+		panic();
+	}
+
+	mount_root();
     
 	printk("mkdir /nand: %d\n", sys_mkdir("/nand", 666));
 	printk("mkdir /nand/abc %d\n", sys_mkdir("/nand/abc", 666));

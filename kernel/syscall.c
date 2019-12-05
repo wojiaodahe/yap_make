@@ -1,10 +1,15 @@
 #include "common.h"
 #include "syscall.h"
-#include "head.h"
 #include "kernel.h"
 #include "error.h"
-#include "print.h"
+#include "printk.h"
+#include "vfs.h"
+#include "lib.h"
+#include "pcb.h"
+#include "proc.h"
 
+
+extern struct file *get_empty_filp(void);
 extern pcb_t *current;
 
 #if 0
@@ -32,7 +37,8 @@ int system_call_sendrec(int argc, int *argv)
 	if (argv[0] != OS_SEND_RECV)
 		return -EINVAL;
 
-	return sys_sendrec(argv[1], argv[2], (MESSAGE *)argv[3], current);
+	//return sys_sendrec(argv[1], argv[2], (MESSAGE *)argv[3], current);
+    return 0;
 }
 
 int system_call_open(int argc, int *argv)
@@ -42,7 +48,7 @@ int system_call_open(int argc, int *argv)
 	if (argv[0] != SYSTEM_CALL_OPEN)
 		return -EINVAL;
 
-	return sys_open(argv[1], argv[2], argv[3]);
+	return sys_open((char *)argv[1], argv[2], argv[3]);
 }
 
 int system_call_read(int argc, int *argv)
@@ -52,35 +58,69 @@ int system_call_read(int argc, int *argv)
 	if (argv[0] != SYSTEM_CALL_READ)
 		return -EINVAL;
 
-	return sys_read(argv[1], argv[2], argv[3]);
+	return sys_read(argv[1], (char *)argv[2], argv[3]);
 }
 
-int system_call_printf(int argc, unsigned int *argv)
+int system_call_printf(int argc, int *argv)
 {
 	if (argc < 3)
 		return -EINVAL;
 	if (argv[0] != SYSTEM_CALL_PRINTF)
 		return -EINVAL;
 
-	sys_write(0, argv[1], argv[2]);
+	return sys_write(0, (char *)argv[1], argv[2]);
 }
 
-int system_call_sleep(int argc, unsigned int *argv)
+int system_call_sleep(int argc, int *argv)
 {
 	if (argc < 2)
 		return -EINVAL;
-	if (argv[0] != SYSTEM_CALL_SLEEP)
+	if (argv[0] != SYSTEM_CALL_SSLEEP)
 		return -EINVAL;
 	process_sleep(argv[1]);
+	return 0;
+}
+
+int system_call_msleep(int argc, int *argv)
+{
+	if (argc < 2)
+		return -EINVAL;
+	if (argv[0] != SYSTEM_CALL_MSLEEP)
+		return -EINVAL;
+	process_msleep(argv[1]);
+	return 0;
+}
+
+int system_call_dup2(int oldfd, int newfd)
+{
+    if (newfd > NR_OPEN || oldfd > NR_OPEN)
+        return -EBADF;
+
+    if (oldfd == newfd)
+        return newfd;
+    
+    if (!current->filp[newfd])
+        current->filp[newfd] = get_empty_filp();
+    
+    if (!current->filp[newfd])
+        return -EBADF;
+
+    if (!current->filp[oldfd])
+        return -EBADF;
+
+    memcpy(current->filp[newfd], current->filp[oldfd], sizeof (struct file));
+    
+    return newfd;
 }
 
 struct system_call_tag system_call[] = 
 {
-	{OS_SEND_RECV, system_call_sendrec},
-	{SYSTEM_CALL_OPEN, system_call_open},
-	{SYSTEM_CALL_READ, system_call_read},
+	{OS_SEND_RECV,       system_call_sendrec},
+	{SYSTEM_CALL_OPEN,   system_call_open},
+	{SYSTEM_CALL_READ,   system_call_read},
 	{SYSTEM_CALL_PRINTF, system_call_printf},
-	{SYSTEM_CALL_SLEEP, system_call_sleep},
+	{SYSTEM_CALL_SSLEEP,  system_call_sleep},
+	{SYSTEM_CALL_MSLEEP,  system_call_msleep},
 };
 
 int sys_call_schedule(int swi_num, int argc, int *argv)
@@ -103,11 +143,15 @@ int sys_call_schedule(int swi_num, int argc, int *argv)
 
 unsigned int OS_Get_Ticks()
 {
+#if 0
    	MESSAGE msg;
 	reset_msg(&msg);
 	msg.type = GET_TICKS;
 	send_recv(BOTH, OS_SYS_PROCESS_PID, &msg);
 	return msg.RETVAL;
+#endif
+
+    return 0;
 }
 
 void milli_delay(int sec)
@@ -162,17 +206,27 @@ void ssleep(unsigned int time)
 	const char argc = 2;
 	unsigned int argv[argc];
 	
-	argv[0] = SYSTEM_CALL_SLEEP;
+	argv[0] = SYSTEM_CALL_SSLEEP;
 	argv[1] = time;
 	user_syscall(argc, argv);
 }
+
+void msleep(unsigned int time)
+{
+	const char argc = 2;
+	unsigned int argv[argc];
+
+	argv[0] = SYSTEM_CALL_MSLEEP;
+	argv[1] = time;
+	user_syscall(argc, argv);
+}
+
 
 int myprintf(char *fmt, ...)
 {
 	const int argc = 3;
 	unsigned int argv[argc];
 	int ret;
-#if 1
 
 	va_list ap;
 	char string[256];
@@ -180,12 +234,15 @@ int myprintf(char *fmt, ...)
 	memset(string, 0, 256);
 	
 	va_start(ap, fmt);
-	ret = vsnprintf(string, 256, fmt, ap);
+
+	ret = vsprintk(string, fmt, ap);
 	argv[0] = SYSTEM_CALL_PRINTF;
 	argv[1] = (unsigned int )string;
 	argv[2] = ret;
-	ret = user_syscall(argc, argv);	
+	ret = user_syscall(argc, argv);
+
 	va_end(ap);
-#endif
+
 	return ret;
 }
+
