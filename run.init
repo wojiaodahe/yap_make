@@ -1,4 +1,4 @@
-target remote 192.168.1.100:2331
+target remote 192.168.8.5:2331
 monitor reset
 monitor halt
 monitor speed 8000
@@ -33,6 +33,6 @@ monitor memU32 0x48000024 = 0x008404f3      #REFRESH
 monitor memU32 0x48000028 = 0x00000032      #BANKSIZE
 monitor memU32 0x4800002C = 0x00000020      #MRSRB6-7
 monitor memU32 0x48000030 = 0x00000020
-load
 break _start
+load
 #continue
