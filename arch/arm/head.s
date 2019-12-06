@@ -15,6 +15,7 @@
 .global __soft_schedule
 .global OS_Start
 .global syscall
+.global _start
 
 .global  IRQ_MODE_STACK
 .global  FIQ_MODE_STACK

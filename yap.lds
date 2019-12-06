@@ -24,7 +24,7 @@ SECTIONS
 	. = 0x00000000;
 	.text : 
 	{
-		*(.startup)
+		./arch/arm/head.o
 		*(.text)
 		__driver_start__ = .;
 		*(.driver)
