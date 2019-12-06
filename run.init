@@ -33,6 +33,6 @@ monitor memU32 0x48000024 = 0x008404f3      #REFRESH
 monitor memU32 0x48000028 = 0x00000032      #BANKSIZE
 monitor memU32 0x4800002C = 0x00000020      #MRSRB6-7
 monitor memU32 0x48000030 = 0x00000020
-break _start
 load
+break _start
 #continue
