@@ -8,7 +8,7 @@
 #include "proc.h"
 #include "wait.h"
 #include "timer.h"
-#include "syslib.h"
+#include "lib.h"
 #include "printk.h"
 #include "vfs.h"
 #include "syscall.h"
@@ -727,7 +727,17 @@ int OS_Init(void)
 
 int proc2pid(pcb_t *proc)
 {
+#if 0
     return proc->pid;
+#else
+    enter_critical();
+    
+    printk("Uncomplete Function %s\n", __func__);
+   
+    panic();
+
+    return 0;
+#endif
 }
 
 pcb_t *pid2proc(int pid)

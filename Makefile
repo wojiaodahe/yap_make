@@ -7,8 +7,15 @@ OBJCOPY			= $(CROSS_COMPILE)objcopy
 OBJDUMP 		= $(CROSS_COMPILE)objdump 
 
 arch			= arm
-CFLAGS 			= -g -Wall -I ./include -I ./arch/arm -nostdlib
+CFLAGS 			= -g -Wall -I ./include -I ./arch/arm -nostdlib -fno-builtin
 LDFLAGS 		= -Tyap.lds -Ttext 30000000 
+
+# Usage:
+#  $(call cmd, cc_o_c)              
+quiet_cmd_cc_o_c = CC $(subst ../, ,$<)
+cmd_cc_o_c = $(CC) $(CFLAGS)   -c $< -o $@
+cmd = @echo  "$(quiet_cmd_cc_o_c)"; $(cmd_cc_o_c)
+
 
 obj-y			=
 TARGET 	 		= yap
@@ -39,27 +46,33 @@ include $(TEST_DIR)/Makefile
 DEPS = $(obj-y:.o=.d)
 
 all: $(obj-y) $(DEPS)
-	$(CC) -static -nostartfiles -nostdlib $(LDFLAGS) $(obj-y) -o $@ -lgcc
-	$(OBJCOPY) -O binary $@ $(TARGET).bin
-	$(OBJDUMP) -D $@ > $(TARGET).dis 
+	@echo LD $(TARGET)
+	@$(CC) -static -nostartfiles -nostdlib $(LDFLAGS) $(obj-y) -o $(TARGET) -lgcc
+	
+	@echo OBJCOPY $(TARGET).bin
+	@$(OBJCOPY) -O binary $(TARGET) $(TARGET).bin
+	
+	@echo OBJDUMP $(TARGET).dis
+	@$(OBJDUMP) -D $(TARGET) > $(TARGET).dis 
 
 -include $(DEPS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(call cmd,cc_o_c)
 
 %.o: %.s
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(call cmd,cc_o_c)
 
 %.o: %.S
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(call cmd,cc_o_c)
 
 %.d: %.c
 	@gcc -MM -E $(CFLAGS) $< | sed 's,\(.*\)\.o[ :]*, $(<:.c=.o) $@: ,g' > $@
 
 %.d: %.s
-	@echo    
+	@echo   > $@
 
 clean:
-	rm all $(TARGET) $(obj-y) *.bin *.dis $(DEPS)
+	@echo rm *.o $(TARGET) *.bin *.dis *.d -rf
+	@rm $(TARGET) $(obj-y) *.bin *.dis $(DEPS)
 

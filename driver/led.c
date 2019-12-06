@@ -1,6 +1,7 @@
 #include "s3c24xx.h"
 #include "fs.h"
-#include "head.h"
+#include "printk.h"
+#include "chr.h"
 
 /*
  * leds.c: Ñ­»·µãÁÁ4¸öLED

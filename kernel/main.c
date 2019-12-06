@@ -194,6 +194,7 @@ int test_completion(void *arg)
 extern int s3c24xx_init_tty(void);
 extern void init_user_program_space(void);
 extern int test_platform(void);
+extern void init_key_irq(void);
 int kernel_main()
 {
     init_key_irq();

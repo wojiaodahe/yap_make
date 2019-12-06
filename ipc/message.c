@@ -1,7 +1,8 @@
 #include "message.h"
 #include "pcb.h"
 #include "assert.h"
-#include "head.h"
+#include "lib.h"
+
 
 extern pcb_t *pid2proc(int);
 
@@ -28,6 +29,8 @@ void unblock(pcb_t *p)
 }
 
 
+extern int proc2pid(pcb_t *proc);
+extern pcb_t *pid2proc(int pid);
 
 int msg_send(pcb_t* current, int dest, MESSAGE* m)
 {
@@ -250,6 +253,7 @@ int msg_receive(pcb_t* current, int src, MESSAGE* m)
 	return 0;
 }
 
+extern int sendrec(int type, int src_dest, MESSAGE *msg);
 int send_recv(int function, int src_dest, MESSAGE* msg)
 {
 	int ret = 0;

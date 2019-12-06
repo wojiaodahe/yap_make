@@ -1,4 +1,5 @@
 all
+yap
 *.o
 *.bin
 *.elf
