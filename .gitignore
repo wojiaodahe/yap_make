@@ -1,3 +1,4 @@
+all
 *.o
 *.bin
 *.elf

@@ -53,7 +53,7 @@ void *get_process_sp()
 
 unsigned int get_cpsr(void)
 {
-	unsigned int p;
+	unsigned long p;
 	asm volatile
     (
 		"mrs %0,cpsr\n"
