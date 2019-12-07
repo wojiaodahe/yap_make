@@ -1,4 +1,17 @@
 #include "s3c24xx.h"
+#include "s3c24xx.h"
+#include "fs.h"
+#include "wait.h"
+#include "interrupt.h"
+#include "printk.h"
+#include "kernel.h"
+#include "chr.h"
+
+extern int test_led(void);
+
+static char keyflag = 0;
+wait_queue_t wq;
+
 /*
  * K1,K2,K3,K4对应GPF1、GPF4、GPF2、GPF0
  */
@@ -36,4 +49,70 @@ void init_key_irq(void)
 
     // EINT0、EINT1、EINT2、EINT4_7使能
     INTMSK &= (~(1 << 0)) & (~(1 << 1)) & (~(1 << 2)) & (~(1 << 4));
+}
+
+
+int key_open(struct inode *inode, struct file *file)
+{
+	int ret = 0;
+
+	printk("key_open\n");
+
+	return ret;
+}
+
+void key_close(struct inode *inode, struct file * file)
+{
+	printk("led_close\n");
+}
+
+int key_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int ret = 0;
+
+	test_led();
+	printk("led_ioctl");
+	return ret;
+}
+
+int key_read(struct inode *inode, struct file *filp, char *buf, int len)
+{
+
+	wait_event(&wq, keyflag == 1);
+	keyflag = 0;
+	return 1;
+}
+
+void key_irq(void *arg)
+{
+	keyflag = 1;
+	wake_up(&wq);
+}
+
+struct file_operations key_fops;
+
+int key_module_init(void)
+{
+	int ret;
+	int key_major = 10;
+
+	key_fops.open  = key_open;
+	key_fops.close = key_close;
+	key_fops.ioctl = key_ioctl;
+	key_fops.read  = key_read;
+/*
+	ret = setup_irq_handler(KEY1_IRQ, key_irq, 0);
+	if (ret < 0)
+		return ret;
+*/
+	ret = register_chrdev(key_major, "key", &key_fops);
+	if (ret < 0)
+		return ret;
+
+	return sys_mknod("/key", S_IFCHR, key_major);
+}
+
+void key_module_exit(void)
+{
+	unregister_chrdev(10);
 }

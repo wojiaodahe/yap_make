@@ -1,7 +1,8 @@
 #include "s3c24xx.h"
 #include "fs.h"
-#include "printk.h"
+#include "syscall.h"
 #include "chr.h"
+#include "printk.h"
 
 /*
  * leds.c: 循环点亮4个LED
@@ -23,14 +24,14 @@
 #define	GPB7_msk	(3<<(7*2))
 #define	GPB8_msk	(3<<(8*2))
 
-
+#if 0
 static void led_delay(unsigned long dly)
 {
 	volatile unsigned int i;
 	for (i = 0; i < dly; i++)
 		;
 }
-
+#endif
 
 void init_led()
 {
@@ -44,7 +45,7 @@ int test_led(void)
 
 	while(1)
 	{
-		led_delay(0x3f0000);
+		ssleep(1);
 		GPBDAT = (~(i << 5));	 	//根据i的值，点亮LED1,2,3,4
 		if (++i == 16)
 			i = 0;
