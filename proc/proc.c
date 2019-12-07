@@ -72,7 +72,8 @@ void thread_exit(void)
 }
 
 int kernel_thread(int (*f)(void *), void *args)
-{
+{ 
+    unsigned long flags;
 	unsigned int sp;
 	
 	pcb_t *pcb = (pcb_t *)alloc_pcb();
@@ -104,9 +105,14 @@ int kernel_thread(int (*f)(void *), void *args)
 	
 	DO_INIT_SP(pcb->sp, f, args, thread_exit, 0x1f & get_cpsr(), 0);
 
-	enter_critical();
-	pcb_list_add(&proc_list[pcb->prio].head, pcb);
-	exit_critical();
+//	enter_critical();
+    
+    local_irq_save(flags);
+
+    pcb_list_add(&proc_list[pcb->prio].head, pcb);
+    
+    local_irq_restore(flags);
+//  exit_critical();
 
 	return 0;
 }

@@ -58,7 +58,7 @@ inline unsigned long arch_local_save_flags(void)
     return cp;
 }
 
-inline void arch_local_restore(unsigned int flags)
+inline void arch_local_irq_restore(unsigned int flags)
 {
     __asm__(
             "msr cpsr_cxsf, %0\n"
