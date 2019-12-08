@@ -34,10 +34,10 @@ extern unsigned int OSIntNesting;
 		do{																		\
 				(sp)=(sp)-4;/*r15*/												\
 				*(volatile unsigned int *)(sp)=(unsigned int)(fn);/*r15*/		\
-				(sp)=(sp)-4;/*cpsr*/												\
+				(sp)=(sp)-4;/*cpsr*/											\
 				*(volatile unsigned int *)(sp)=(unsigned int)(cpsr);/*r14*/		\
-				(sp)=(sp)-4;/*lr*/											\
-				*(volatile unsigned int *)(sp)=(unsigned int)(lr);			\
+				(sp)=(sp)-4;/*lr*/												\
+				*(volatile unsigned int *)(sp)=(unsigned int)(lr);				\
 				(sp)=(sp)-4*13;/*r12,r11,r10,r9,r8,r7,r6,r5,r4,r3,r2,r1,r0*/	\
 				*(volatile unsigned int *)(sp)=(unsigned int)(args);			\
 		}while(0)
@@ -568,6 +568,7 @@ extern void s3c24xx_controler_init(void);
 extern void spi_info_jz2440_init(void);
 extern int spi_oled_init(void);
 extern void sys_timer_init(void);
+extern int net_core_init(void);
 int OS_INIT_PROCESS(void *argv)
 {
 	int ret;
@@ -622,9 +623,9 @@ int OS_INIT_PROCESS(void *argv)
 	led_device_init();
 	//key_module_init();
 
-	//socket_init();
-	//net_core_init();
-	//dm9000_module_init();
+	socket_init();
+	net_core_init();
+	dm9000_module_init();
 
     spi_module_init();
     s3c24xx_controler_init();
@@ -640,7 +641,7 @@ int OS_INIT_PROCESS(void *argv)
 //	kernel_thread(test_user_syscall_open, (void *)2);
 	kernel_thread_prio(test_user_syscall_printf, (void *)2, PROCESS_PRIO_HIGH);
 //	kernel_thread(test_wait_queue, (void *)2);
-//	kernel_thread(test_socket, (void *)2);
+	kernel_thread(test_socket, (void *)2);
 	kernel_thread(test_completion, (void *)2);
 	kernel_thread(test_oled, (void *)2);
 //	kernel_thread(test_oled1, (void *)2);

@@ -25,6 +25,7 @@ FS_DIR  		= $(TOP_DIR)/fs
 MM_DIR  		= $(TOP_DIR)/mm
 IPC_DIR 		= $(TOP_DIR)/ipc
 LIB_DIR 		= $(TOP_DIR)/lib
+NET_DIR 		= $(TOP_DIR)/net
 ARCH_DIR 		= $(TOP_DIR)/arch
 PROC_DIR 		= $(TOP_DIR)/proc
 DRIVER_DIR 		= $(TOP_DIR)/driver
@@ -41,6 +42,7 @@ include $(DRIVER_DIR)/Makefile
 include $(IPC_DIR)/Makefile
 include $(FS_DIR)/Makefile
 include $(MM_DIR)/Makefile
+include $(NET_DIR)/Makefile
 include $(TEST_DIR)/Makefile
 
 DEPS = $(obj-y:.o=.d)
